@@ -2,6 +2,8 @@
 
 **OpenRAG Studio** is a locally deployed, enterprise-grade Retrieval-Augmented Generation (RAG) knowledge base platform. It deeply integrates local large language model services (OpenCode) and vector databases (ChromaDB), helping users easily transform private documents into intelligent assets for secure, accurate, and context-aware Q&A.
 
+![](20261019175902.png)
+
 ## 📖 Detailed Business Features
 
 OpenRAG Studio consists of four core business modules, covering the complete lifecycle from model diagnostics and knowledge ingestion to intelligent Q&A.
