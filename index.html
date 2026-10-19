@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库平台 · 配置中心与问答</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #fff; --surface-2: #f9fafb; --surface-3: #f3f4f6;
+    --border: #e5e7eb; --border-strong: #d1d5db;
+    --text: #111827; --text-secondary: #6b7280; --text-tertiary: #9ca3af;
+    --accent: #2563eb; --accent-hover: #1d4ed8; --accent-soft: #eff6ff;
+    --success: #10b981; --success-soft: #ecfdf5;
+    --danger: #ef4444; --danger-soft: #fef2f2;
+    --radius: 12px; --radius-sm: 8px;
+    --mono: "SF Mono", Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); font-size: 14.5px; line-height: 1.6;
+    display: flex; overflow: hidden; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+  /* 侧边栏 */
+  .sidebar { width: 300px; min-width: 300px; height: 100vh; background: var(--surface);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+  .sidebar-header { padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon { width: 34px; height: 34px; background: linear-gradient(135deg,#2563eb,#4f46e5);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 16px; }
+  .brand-name { font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .brand-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .sidebar-nav { flex: 1; overflow-y: auto; padding: 10px 12px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: var(--radius-sm); font-size: 13.5px; color: var(--text-secondary);
+    cursor: pointer; transition: .15s; margin-bottom: 2px; user-select: none; }
+  .nav-item:hover { background: var(--surface-3); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  /* 主区域 */
+  .main { flex: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+  .main-header { padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .header-title { font-size: 15.5px; font-weight: 650; }
+  .header-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  
+  .view-container { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .view { display: none; } .view.active { display: block; }
+
+  /* 通用组件 */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(0,0,0,.05); margin-bottom: 18px; overflow: hidden; }
+  .card-head { padding: 14px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 14px; font-weight: 650; }
+  .card-body { padding: 16px 18px; }
+  
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid transparent; transition: .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+  .btn-secondary:hover:not(:disabled) { background: var(--surface-2); }
+  .btn-danger { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+  .btn-danger:hover:not(:disabled) { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .btn-loading { pointer-events: none; opacity: .7; }
+  .btn-loading::after { content: ''; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.3);
+    border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; margin-left: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .field label { display: block; font-size: 11.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 11px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; color: var(--text);
+    background: var(--surface); outline: none; transition: .15s; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+
+  .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 500; }
+  .status-pill.ok { background: var(--success-soft); color: #047857; }
+  .status-pill.fail { background: var(--danger-soft); color: #b91c1c; }
+  .status-pill.idle { background: var(--surface-3); color: var(--text-tertiary); }
+  .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* 调测台 UI */
+  .test-console { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+  .test-messages { height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; scroll-behavior: smooth; }
+  .test-msg { font-size: 12.5px; padding: 8px 12px; border-radius: 8px; max-width: 85%; line-height: 1.6; word-break: break-all; }
+  .test-msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+  .test-msg.ai { background: var(--surface); border: 1px solid var(--border); color: var(--text); align-self: flex-start; border-bottom-left-radius: 2px; }
+  .test-input-row { display: flex; gap: 8px; }
+  .test-input-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; }
+
+  /* 导入向导 UI */
+  .steps-bar { display: flex; align-items: center; margin-bottom: 22px; padding: 18px 22px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+  .step-node { display: flex; align-items: center; gap: 8px; }
+  .step-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12.5px; color: var(--text-tertiary); }
+  .step-node.active .step-circle { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .step-node.done .step-circle { border-color: var(--success); background: var(--success); color: #fff; }
+  .step-label { font-size: 12.5px; font-weight: 600; color: var(--text-tertiary); }
+  .step-node.active .step-label { color: var(--accent); }
+  .step-line { flex: 1; height: 2px; background: var(--border); margin: 0 10px; }
+  .step-content { display: none; } .step-content.active { display: block; }
+  .upload-zone { display: block; border: 1.5px dashed var(--border-strong); border-radius: var(--radius-sm); padding: 28px; text-align: center; cursor: pointer; }
+  .upload-zone input { display: none; }
+  .wizard-actions { display: flex; justify-content: space-between; margin-top: 20px; }
+  
+  /* 多会话聊天布局 */
+  .chat-layout { display: flex; height: calc(100vh - 100px); background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  
+  /* 左侧会话列表 */
+  .session-sidebar { width: 260px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--surface-2); flex-shrink: 0; }
+  .session-head { padding: 16px; border-bottom: 1px solid var(--border); }
+  .session-list { flex: 1; overflow-y: auto; padding: 10px; }
+  .session-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; transition: .15s; }
+  .session-item:hover { background: var(--surface-3); }
+  .session-item.active { background: var(--accent-soft); color: var(--accent); }
+  .session-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
+  .btn-del-session { display: none; width: 24px; height: 24px; border: none; background: transparent; color: var(--text-tertiary); border-radius: 4px; cursor: pointer; align-items: center; justify-content: center; font-size: 16px; line-height: 1; }
+  .session-item:hover .btn-del-session { display: flex; }
+  .btn-del-session:hover { background: var(--danger-soft); color: var(--danger); }
+
+  /* 右侧聊天区 */
+  .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-head { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
+  .chat-scroll { flex: 1; overflow-y: auto; padding: 24px 20px; scroll-behavior: smooth; }
+  .chat-inner { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+  .msg { display: flex; gap: 12px; }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .avatar.ai { background: #dbeafe; color: var(--accent); }
+  .avatar.user { background: var(--accent); color: #fff; }
+  .bubble { padding: 11px 15px; border-radius: var(--radius); font-size: 14.5px; max-width: 85%; line-height: 1.7; word-break: break-word; }
+  .msg.user .bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.assistant .bubble { background: var(--surface-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; width: 100%; }
+  .composer { padding: 16px 20px; border-top: 1px solid var(--border); background: var(--surface); }
+  .composer-box { max-width: 800px; margin: 0 auto; display: flex; gap: 8px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 9px 16px; }
+  .composer-box textarea { flex: 1; border: none; outline: none; resize: none; padding: 5px 0; font-family: inherit; font-size: 14.5px; }
+
+  /* 思考动画与打字机光标 */
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .thinking-text { color: var(--text-secondary); font-size: 13.5px; animation: pulse 1.5s ease-in-out infinite; display: flex; align-items: center; gap: 6px; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+  .cursor { display: inline-block; width: 6px; height: 15px; background-color: var(--accent); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.9s step-end infinite; }
+
+  /* 历史记录列表 */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .history-table th { text-align: left; padding: 10px; background: var(--surface-2); color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+  .history-table td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .history-table tr:hover { background: var(--surface-2); }
+
+  /* Modal 弹窗 */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--surface); width: 700px; max-width: 90vw; max-height: 80vh; border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-weight: 650; font-size: 15px; }
+  .modal-close { cursor: pointer; font-size: 20px; color: var(--text-tertiary); background: none; border: none; }
+  .modal-body { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; background: var(--surface-2); }
+  .chunk-item { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 8px; }
+  .chunk-no { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 6px; display: block; }
+  .chunk-text { font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+
+  /* 开发手册样式 */
+  .manual-container { max-width: 900px; margin: 0 auto; padding-bottom: 40px; }
+  .manual-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .manual-subtitle { font-size: 14.5px; color: var(--text-secondary); margin-bottom: 30px; }
+  .manual-section { margin-bottom: 36px; }
+  .manual-section h2 { font-size: 18px; font-weight: 650; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 16px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .manual-section h3 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; color: var(--text); }
+  .manual-section p { margin-bottom: 12px; color: var(--text-secondary); font-size: 14px; }
+  .manual-section ul, .manual-section ol { margin-bottom: 16px; padding-left: 24px; color: var(--text-secondary); font-size: 14px; }
+  .manual-section li { margin-bottom: 6px; }
+  .manual-code { background: #0f172a; color: #e2e8f0; padding: 14px 18px; border-radius: 8px; font-family: var(--mono); font-size: 13px; overflow-x: auto; margin-bottom: 16px; line-height: 1.6; white-space: pre-wrap; }
+  .manual-alert { background: var(--warning-soft); border-left: 4px solid var(--warning); padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; font-size: 13.5px; color: #92400e; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="brand">
+      <div class="brand-icon">R</div>
+      <div>
+        <div class="brand-name">知识库平台</div>
+        <div class="brand-sub">配置 · 导入 · 问答</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-view="config">
+      <span>⚙️</span> 配置中心
+    </div>
+    <div class="nav-item" data-view="import">
+      <span>📄</span> 文档导入
+    </div>
+    <div class="nav-item" data-view="chat">
+      <span>💬</span> 知识库问答
+    </div>
+    <div class="nav-item" data-view="manual" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <span>📖</span> 开发手册
+    </div>
+  </nav>
+</aside>
+
+<main class="main">
+  <header class="main-header">
+    <div>
+      <div class="header-title" id="view-title">配置中心</div>
+      <div class="header-sub" id="view-sub">OpenCode 连接调测 · 免费模型选择 · 向量数据库</div>
+    </div>
+  </header>
+
+  <div class="view-container">
+    <!-- 配置中心 -->
+    <div class="view active" id="view-config">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">OpenCode 服务</div>
+          <span class="status-pill idle" id="pill-oc"><span class="dot"></span>未连接</span>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="field">
+              <label>服务地址</label>
+              <input type="text" id="oc-base" value="http://127.0.0.1:4096" disabled>
+            </div>
+            <div class="field">
+              <label>当前免费模型</label>
+              <select id="model-select" disabled>
+                <option value="">请先连接获取模型...</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <button class="btn btn-primary btn-sm" id="btn-connect-oc">测试连接并加载模型</button>
+            <button class="btn btn-secondary btn-sm" id="btn-test-ping" disabled>测试推理(Ping)</button>
+          </div>
+
+          <div class="test-console">
+            <div style="font-size:12px; font-weight:600; margin-bottom:8px;">💬 对话调测台</div>
+            <div class="test-messages" id="test-messages">
+              <div class="test-msg ai">连接成功并选择模型后，可在此测试收发功能。</div>
+            </div>
+            <div class="test-input-row">
+              <input type="text" id="test-input" placeholder="输入消息测试…" disabled>
+              <button class="btn btn-primary btn-sm" id="btn-test-send" disabled>发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">向量数据库 (ChromaDB)</div>
+          <span class="status-pill idle" id="pill-vdb"><span class="dot"></span>检测中...</span>
+        </div>
+        <div class="card-body">
+          <div class="field" style="margin-bottom:12px;">
+            <label>连接地址</label>
+            <input type="text" id="vdb-url" value="http://127.0.0.1:8000">
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-test-vdb">重新检测</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 文档导入 -->
+    <div class="view" id="view-import">
+      <div class="steps-bar">
+        <div class="step-node active" data-step="1"><div class="step-circle">1</div><div class="step-label">选择文档</div></div>
+        <div class="step-line"></div>
+        <div class="step-node" data-step="2"><div class="step-circle">2</div><div class="step-label">切片配置</div></div>
+        <div class="step-line"></div>
+        <div class="step-node" data-step="3"><div class="step-circle">3</div><div class="step-label">预览确认</div></div>
+        <div class="step-line"></div>
+        <div class="step-node" data-step="4"><div class="step-circle">4</div><div class="step-label">执行导入</div></div>
+      </div>
+
+      <div class="step-content active" data-step="1">
+        <div class="card">
+          <div class="card-head"><div class="card-title">选择文件</div></div>
+          <div class="card-body">
+            <label class="upload-zone" id="upload-zone">
+              <strong>点击选择或拖拽上传</strong><br>
+              支持 PDF / DOCX / TXT (≤ 20MB)
+              <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt">
+            </label>
+            <div id="file-info" style="margin-top:12px; font-size:13px; color:var(--accent);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-content" data-step="2">
+        <div class="card">
+          <div class="card-head"><div class="card-title">切片参数</div></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="field"><label>Chunk Size (字符)</label><input type="number" id="chunk-size" value="800"></div>
+              <div class="field"><label>Chunk Overlap (字符)</label><input type="number" id="chunk-overlap" value="150"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-content" data-step="3">
+        <div class="card">
+          <div class="card-head"><div class="card-title">切片预览</div></div>
+          <div class="card-body">
+            <div id="preview-loading" style="display:none;">正在解析...</div>
+            <div id="preview-content" style="display:none;">
+              <div style="margin-bottom:10px;">共解析出 <span id="stat-total" style="color:var(--accent);font-weight:700;">0</span> 个切片</div>
+              <div id="chunk-list" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-content" data-step="4">
+        <div class="card">
+          <div class="card-head"><div class="card-title">执行导入</div></div>
+          <div class="card-body"><div id="import-status">准备导入...</div></div>
+        </div>
+      </div>
+
+      <div class="wizard-actions">
+        <button class="btn btn-secondary" id="btn-prev" style="visibility:hidden;">上一步</button>
+        <button class="btn btn-primary" id="btn-next">下一步</button>
+      </div>
+
+      <!-- 导入历史记录 -->
+      <div class="card" style="margin-top:30px;">
+        <div class="card-head">
+          <div class="card-title">📚 知识库已导入文档 (ChromaDB)</div>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-history">刷新列表</button>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>文件名 / 来源</th>
+                <th>切片数量</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="history-list">
+              <tr><td colspan="3" style="text-align:center; color:var(--text-tertiary); padding:20px;">加载中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 多会话知识库问答 -->
+    <div class="view" id="view-chat">
+      <div class="chat-layout">
+        <!-- 左侧会话列表 -->
+        <div class="session-sidebar">
+          <div class="session-head">
+            <button class="btn btn-primary" id="btn-new-chat" style="width: 100%;">
+              + 新建对话
+            </button>
+          </div>
+          <div class="session-list" id="session-list">
+            <!-- 动态渲染 -->
+          </div>
+        </div>
+
+        <!-- 右侧聊天区 -->
+        <div class="chat-main">
+          <div class="chat-head">
+            <div class="card-title" id="current-session-title">新对话</div>
+            <span id="chat-model-info" style="font-size:12px;color:var(--text-tertiary);">未选择模型</span>
+          </div>
+          <div class="chat-scroll" id="chat-scroll">
+            <div class="chat-inner" id="chat-messages">
+              <!-- 动态渲染 -->
+            </div>
+          </div>
+          <div class="composer">
+            <div class="composer-box">
+              <textarea id="chat-input" rows="1" placeholder="向知识库提问..."></textarea>
+              <button class="btn btn-primary" id="btn-chat-send">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 开发手册 -->
+    <div class="view" id="view-manual">
+      <div class="manual-container">
+        <h1 class="manual-title">知识库系统开发与部署手册</h1>
+        <p class="manual-subtitle">本文档涵盖了从零开始运行本 RAG（检索增强生成）系统的完整步骤。</p>
+
+        <div class="manual-section">
+          <h2>1. 环境准备</h2>
+          <p>本系统依赖 Python 运行环境、Docker（用于向量数据库）以及 OpenCode 服务端。</p>
+          
+          <h3>1.1 启动 ChromaDB 向量数据库</h3>
+          <p>使用 Docker 运行一个轻量级的 ChromaDB 实例，并开放 8000 端口：</p>
+          <div class="manual-code">docker run -d --name chromadb -p 8000:8000 chromadb/chroma:latest</div>
+          
+          <h3>1.2 启动 OpenCode 服务</h3>
+          <p>在终端中启动 OpenCode 的本地服务，默认监听 4096 端口：</p>
+          <div class="manual-code">opencode serve --port 4096</div>
+        </div>
+
+        <div class="manual-section">
+          <h2>2. 安装依赖与启动后端</h2>
+          <p>系统后端基于 FastAPI 构建，负责解析文档、连接向量库以及调用大模型。</p>
+          
+          <h3>2.1 安装 Python 依赖</h3>
+          <p>打开终端，执行以下命令安装必须的库：</p>
+          <div class="manual-code">pip install fastapi uvicorn python-multipart httpx chromadb "langchain" "langchain-community" "langchain-chroma" "langchain-huggingface" pypdf docx2txt beautifulsoup4</div>
+          
+          <h3>2.2 启动 FastAPI 后端</h3>
+          <p>将 <code>rag_backend.py</code> 文件保存到本地后，运行以下命令（监听 8001 端口）：</p>
+          <div class="manual-code">python rag_backend.py</div>
+          <div class="manual-alert">注意：首次运行会自动从 HuggingFace 镜像站下载 <code>BAAI/bge-small-zh-v1.5</code> 嵌入模型（约 100MB），请保持网络通畅。</div>
+        </div>
+
+        <div class="manual-section">
+          <h2>3. 前端页面访问与配置</h2>
+          <p>直接双击打开 <code>index.html</code> 文件，或者使用静态服务器如 <code>python -m http.server 8080</code> 托管页面。</p>
+          
+          <h3>3.1 配置中心设置</h3>
+          <ul>
+            <li><strong>OpenCode 连接</strong>：点击“测试连接并加载模型”，系统会自动请求 OpenCode 的 <code>/api/model</code> 接口。在下拉框中选择一个免费模型（如 <code>deepseek-v4.1-flash-free</code>），选择后系统会自动下发模型 ID 给后端。</li>
+            <li><strong>向量库连接</strong>：系统默认会自动检测 <code>http://127.0.0.1:8000</code>。若显示绿色“已连接”即可直接使用。</li>
+          </ul>
+        </div>
+
+        <div class="manual-section">
+          <h2>4. 文档导入流程</h2>
+          <p>系统支持 PDF、Word (DOCX) 和纯文本文件的解析与切片。导入向导分为四步：</p>
+          <ol>
+            <li><strong>选择文档</strong>：拖拽或点击上传文件（单文件不超过 20MB）。</li>
+            <li><strong>切片配置</strong>：默认 Chunk Size 为 800 字符，Overlap 为 150 字符。中文长句较多时，较小的 Chunk Size 通常检索效果更好。</li>
+            <li><strong>预览确认</strong>：点击后，后端会加载文档并使用 <code>RecursiveCharacterTextSplitter</code> 进行切片，并返回前 5 个片段供确认。</li>
+            <li><strong>执行导入</strong>：将切片向量化（基于 bge 模型）并写入 ChromaDB 中。</li>
+          </ol>
+        </div>
+
+        <div class="manual-section">
+          <h2>5. 知识库问答 (RAG)</h2>
+          <p>在问答界面，输入问题后，系统运行流程如下：</p>
+          <ul>
+            <li><strong>向量检索</strong>：后端将问题向量化，去 ChromaDB 中召回相关度最高的 3 个切片。</li>
+            <li><strong>构建 Prompt</strong>：拼接检索到的资料（Context）以及最近两轮的历史对话。</li>
+            <li><strong>模型生成</strong>：将 Prompt 发送给 OpenCode 绑定的模型，后端截获流式数据后，通过打字机效果在页面逐字展示。</li>
+          </ul>
+        </div>
+
+        <div class="manual-section">
+          <h2>6. 常见问题排查 (FAQ)</h2>
+          
+          <h3>Q1: 为什么对话时报错 [OpenCode 错误] HTTP 500？</h3>
+          <p>通常是因为上下文超出了模型的最大 Token 限制，或者 OpenCode 进程异常。系统已经在前后端限制了仅携带最近 2 轮对话。若仍报错，请查看 OpenCode 的终端输出。</p>
+
+          <h3>Q2: 为什么 ChromaDB 连接测试失败？</h3>
+          <p>检查 ChromaDB 的 8000 端口是否被占用，或 Docker 容器是否正常运行。Chroma 1.x 版本引入了 CORS 限制，但在本系统中，前端探活是走后端（8001）代理的，所以只要后端启动，通常不受浏览器跨域限制。</p>
+
+          <h3>Q3: 文件导入时提示 "Failed to fetch"？</h3>
+          <p>这说明前端无法连接到 8001 端口的 RAG 后端。请确认终端是否显示了 <code>Uvicorn running on http://127.0.0.1:8001</code>，以及是否因为缺少依赖导致后端启动崩溃。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 预览切片弹窗 -->
+<div class="modal-overlay" id="modal-chunks">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">文件切片详情</div>
+      <button class="modal-close" onclick="document.getElementById('modal-chunks').classList.remove('active')">×</button>
+    </div>
+    <div class="modal-body" id="modal-chunk-list">
+      <!-- 动态注入切片 -->
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const API = 'http://127.0.0.1:8001';
+  const $ = id => document.getElementById(id);
+  
+  const state = { 
+    selectedModel: '', 
+    wizard: { step: 1, file: null, previewDocId: null },
+    
+    // 多会话数据
+    sessions: [],
+    currentSessionId: null,
+    isChatting: false // 防止重复发送
+  };
+
+  // ==========================================
+  // 多会话核心逻辑 (LocalStorage 持久化)
+  // ==========================================
+  function loadSessions() {
+    const saved = localStorage.getItem('rag_sessions');
+    if (saved) {
+      try { state.sessions = JSON.parse(saved); } catch (e) { state.sessions = []; }
+    }
+    
+    if (!state.sessions || state.sessions.length === 0) {
+      createNewSession(false);
+    } else {
+      // 默认选中第一个
+      switchSession(state.sessions[0].id);
+    }
+    renderSessionList();
+  }
+
+  function saveSessions() {
+    localStorage.setItem('rag_sessions', JSON.stringify(state.sessions));
+  }
+
+  function createNewSession(switchToIt = true) {
+    const newSession = {
+      id: 'session_' + Date.now(),
+      title: '新对话',
+      messages: [
+        { role: 'assistant', content: '你好，请先在配置中心连接模型并导入文档，然后向我提问。' }
+      ],
+      history: [] // 用于发送给后端的上下文
+    };
+    state.sessions.unshift(newSession); // 插入到最前面
+    saveSessions();
+    renderSessionList();
+    
+    if (switchToIt) {
+      switchSession(newSession.id);
+    }
+  }
+
+  function switchSession(id) {
+    if (state.isChatting) return alert('请等待当前回复完成后再切换会话');
+    
+    state.currentSessionId = id;
+    const session = state.sessions.find(s => s.id === id);
+    if (!session) return;
+
+    $('current-session-title').textContent = session.title;
+    
+    // 渲染消息列表
+    const msgs = $('chat-messages');
+    msgs.innerHTML = '';
+    session.messages.forEach(m => {
+      appendChatBubble(m.role, m.content);
+    });
+    
+    // 滚动到底部
+    $('chat-scroll').scrollTop = $('chat-scroll').scrollHeight;
+    renderSessionList(); // 更新高亮
+  }
+
+  function deleteSession(e, id) {
+    e.stopPropagation(); // 阻止触发切换
+    if (state.isChatting) return alert('请等待当前回复完成后再删除会话');
+    if (!confirm('确定要删除该对话记录吗？')) return;
+    
+    state.sessions = state.sessions.filter(s => s.id !== id);
+    saveSessions();
+    
+    if (state.currentSessionId === id) {
+      if (state.sessions.length > 0) {
+        switchSession(state.sessions[0].id);
+      } else {
+        createNewSession();
+      }
+    } else {
+      renderSessionList();
+    }
+  }
+
+  function renderSessionList() {
+    const list = $('session-list');
+    list.innerHTML = state.sessions.map(s => `
+      <div class="session-item ${s.id === state.currentSessionId ? 'active' : ''}" onclick="switchSession('${s.id}')">
+        <div class="session-title">${s.title}</div>
+        <button class="btn-del-session" onclick="deleteSession(event, '${s.id}')">×</button>
+      </div>
+    `).join('');
+  }
+
+  // 暴露给全局 onclick
+  window.switchSession = switchSession;
+  window.deleteSession = deleteSession;
+
+
+  // ==========================================
+  // 视图切换与导航
+  // ==========================================
+  document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n === el));
+      document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + el.dataset.view));
+      const titles = { config: '配置中心', import: '文档导入', chat: '知识库问答', manual: '开发手册' };
+      const subs = { 
+        config: 'OpenCode 连接调测 · 免费模型选择 · 向量数据库', 
+        import: '上传文件、配置切片并写入知识库', 
+        chat: '基于已导入文档进行智能问答', 
+        manual: '系统架构说明、部署流程与常见问题排查' 
+      };
+      $('view-title').textContent = titles[el.dataset.view];
+      $('view-sub').textContent = subs[el.dataset.view];
+      if (el.dataset.view === 'import') loadHistory();
+      if (el.dataset.view === 'chat') $('chat-scroll').scrollTop = $('chat-scroll').scrollHeight;
+    });
+  });
+
+  // ==========================================
+  // 配置中心
+  // ==========================================
+  async function connectOpenCode() {
+    $('btn-connect-oc').classList.add('btn-loading');
+    try {
+      const res = await fetch('http://127.0.0.1:4096/global/health');
+      if (!res.ok) throw new Error('OpenCode 未响应');
+      
+      $('pill-oc').className = 'status-pill ok'; $('pill-oc').innerHTML = '<span class="dot"></span>已连接';
+      
+      const mr = await fetch('http://127.0.0.1:4096/api/model');
+      const raw = await mr.json();
+      const data = Array.isArray(raw) ? raw : (raw.data || raw.models || []);
+      
+      const freeModels = data.map(m => {
+        const mid = m.modelID || m.id || ''; const pid = m.providerID || '';
+        return { id: pid && !mid.includes('/') ? `${pid}/${mid}` : mid, name: m.name || mid };
+      }).filter(m => m.id.toLowerCase().includes('free') || m.id.toLowerCase().includes('pickle'));
+
+      const select = $('model-select');
+      select.innerHTML = '<option value="">-- 请选择模型 --</option>';
+      freeModels.forEach(m => select.innerHTML += `<option value="${m.id}">${m.name} (${m.id})</option>`);
+      select.disabled = false;
+
+    } catch (e) {
+      $('pill-oc').className = 'status-pill fail'; $('pill-oc').innerHTML = '<span class="dot"></span>失败';
+      console.error('连接失败: ' + e.message);
+    }
+    $('btn-connect-oc').classList.remove('btn-loading');
+  }
+  $('btn-connect-oc').addEventListener('click', connectOpenCode);
+
+  $('model-select').addEventListener('change', async function() {
+    if (!this.value) return;
+    state.selectedModel = this.value;
+    $('chat-model-info').textContent = '当前模型: ' + state.selectedModel;
+    try {
+      await fetch(API + '/api/config/mcp/apply-model', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: state.selectedModel })
+      });
+      $('test-input').disabled = false;
+      $('btn-test-send').disabled = false;
+      $('btn-test-ping').disabled = false;
+    } catch (e) { console.error('同步模型失败'); }
+  });
+
+  $('btn-test-ping').addEventListener('click', async function() {
+    this.classList.add('btn-loading');
+    try {
+      const r = await fetch(API + '/api/opencode/test-model', { method: 'POST' });
+      const d = await r.json();
+      addTestMsg('ai', d.ok ? '✅ ' + d.message : '❌ 失败: ' + d.message);
+    } catch (e) { addTestMsg('ai', '❌ 网络错误: ' + e.message); }
+    this.classList.remove('btn-loading');
+  });
+
+  function addTestMsg(role, text) {
+    const box = $('test-messages');
+    const div = document.createElement('div');
+    div.className = 'test-msg ' + role;
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    return div;
+  }
+
+  $('btn-test-send').addEventListener('click', async function() {
+    const text = $('test-input').value.trim();
+    if (!text) return;
+    $('test-input').value = '';
+    addTestMsg('user', text);
+    const aiDiv = addTestMsg('ai', '思考中…');
+    
+    try {
+      const r = await fetch(API + '/api/opencode/chat-test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '', fullText = '';
+      aiDiv.textContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+        let sep;
+        while ((sep = buf.indexOf('\n\n')) !== -1) {
+          const block = buf.slice(0, sep); buf = buf.slice(sep + 2);
+          if (!block.trim()) continue;
+          let evt = 'message'; const dataLines = [];
+          for (const line of block.split('\n')) {
+            if (line.startsWith('event:')) evt = line.slice(6).trim();
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+          }
+          if (!dataLines.length) continue;
+          let payload; try { payload = JSON.parse(dataLines.join('\n')); } catch (_) { continue; }
+          
+          if (evt === 'token') {
+            fullText += (payload.token || '');
+            aiDiv.textContent = fullText;
+            $('test-messages').scrollTop = $('test-messages').scrollHeight;
+          }
+        }
+      }
+    } catch (e) { aiDiv.textContent = '❌ 请求失败: ' + e.message; }
+  });
+
+  // === 向量库检测逻辑 ===
+  async function checkVdbStatus() {
+    $('pill-vdb').className = 'status-pill idle';
+    $('pill-vdb').innerHTML = '<span class="dot"></span>检测中...';
+    try {
+      const r = await fetch(API + '/api/config/vdb/test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'chroma', url: $('vdb-url').value })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        $('pill-vdb').className = 'status-pill ok'; $('pill-vdb').innerHTML = '<span class="dot"></span>已连接';
+      } else {
+        throw new Error(d.message);
+      }
+    } catch (e) {
+      $('pill-vdb').className = 'status-pill fail'; $('pill-vdb').innerHTML = '<span class="dot"></span>未连接';
+    }
+  }
+  $('btn-test-vdb').addEventListener('click', async function() {
+    this.classList.add('btn-loading');
+    await checkVdbStatus();
+    this.classList.remove('btn-loading');
+  });
+
+  // ==========================================
+  // 文档导入
+  // ==========================================
+  function gotoStep(n) {
+    state.wizard.step = n;
+    document.querySelectorAll('.step-node').forEach(node => {
+      const s = Number(node.dataset.step);
+      node.classList.toggle('active', s === n);
+      node.classList.toggle('done', s < n);
+    });
+    document.querySelectorAll('.step-content').forEach(c => c.classList.toggle('active', Number(c.dataset.step) === n));
+    $('btn-prev').style.visibility = n > 1 && n < 4 ? 'visible' : 'hidden';
+    $('btn-next').textContent = n === 3 ? '开始导入' : '下一步';
+    if (n === 3) generatePreview();
+    if (n === 4) startImport();
+  }
+
+  $('file-input').addEventListener('change', function() {
+    if (this.files.length) {
+      state.wizard.file = this.files[0];
+      $('file-info').textContent = `已选择: ${this.files[0].name}`;
+    }
+  });
+
+  $('btn-prev').addEventListener('click', () => { if (state.wizard.step > 1) gotoStep(state.wizard.step - 1); });
+  $('btn-next').addEventListener('click', () => {
+    if (state.wizard.step === 1 && !state.wizard.file) return alert('请先选择文件');
+    if (state.wizard.step === 3 && !state.wizard.previewDocId) return alert('请先生成预览');
+    if (state.wizard.step < 4) gotoStep(state.wizard.step + 1);
+  });
+
+  async function generatePreview() {
+    $('preview-loading').style.display = 'block';
+    $('preview-content').style.display = 'none';
+    try {
+      const fd = new FormData();
+      fd.append('file', state.wizard.file);
+      fd.append('source_type', 'file');
+      fd.append('slice_config', JSON.stringify({
+        chunkSize: Number($('chunk-size').value),
+        chunkOverlap: Number($('chunk-overlap').value)
+      }));
+      const r = await fetch(API + '/api/ingest/preview', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || '解析失败');
+
+      state.wizard.previewDocId = d.doc_id;
+      $('stat-total').textContent = d.stats.total;
+      $('chunk-list').innerHTML = d.chunks.map((c, i) => `
+        <div style="background:var(--surface-2);padding:10px;border-radius:6px;border:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">#${i+1} (${c.length}字符)</div>
+          <div style="font-size:12px;">${c.text}</div>
+        </div>
+      `).join('');
+      $('preview-loading').style.display = 'none';
+      $('preview-content').style.display = 'block';
+    } catch (e) { alert('生成预览失败: ' + e.message); gotoStep(2); }
+  }
+
+  async function startImport() {
+    const fd = new FormData();
+    fd.append('doc_id', state.wizard.previewDocId);
+    try {
+      const r = await fetch(API + '/api/ingest/execute', { method: 'POST', body: fd });
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+        let sep;
+        while ((sep = buf.indexOf('\n\n')) !== -1) {
+          const block = buf.slice(0, sep); buf = buf.slice(sep + 2);
+          if (!block.trim()) continue;
+          let evt = 'message'; const dataLines = [];
+          for (const line of block.split('\n')) {
+            if (line.startsWith('event:')) evt = line.slice(6).trim();
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+          }
+          if (!dataLines.length) continue;
+          let payload; try { payload = JSON.parse(dataLines.join('\n')); } catch (_) { continue; }
+          if (evt === 'stage') $('import-status').textContent = `进度 ${payload.progress}%: ${payload.message}`;
+          else if (evt === 'done') {
+            $('import-status').innerHTML = '✅ 导入完成！可以前往问答页面提问了。';
+            $('btn-next').disabled = true;
+            loadHistory(); 
+          }
+        }
+      }
+    } catch (e) { $('import-status').textContent = '❌ 导入失败: ' + e.message; }
+  }
+
+  // 历史记录与操作
+  $('btn-refresh-history').addEventListener('click', loadHistory);
+
+  async function loadHistory() {
+    const tbody = $('history-list');
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-tertiary);">加载中...</td></tr>';
+    try {
+      const r = await fetch(API + '/api/kb/files');
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.message);
+      
+      if (d.files.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-tertiary); padding:20px;">向量库中暂无文档</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = d.files.map(f => `
+        <tr>
+          <td style="font-weight:600;">${f.name}</td>
+          <td><span style="background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${f.chunks} 片</span></td>
+          <td>
+            <button class="btn btn-secondary btn-sm" style="margin-right:8px;" onclick="viewChunks('${f.name}')">查看切片</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteFile('${f.name}')">删除</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) { 
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--danger); padding:20px;">加载失败: ${e.message}</td></tr>`;
+    }
+  }
+
+  window.viewChunks = async function(fileName) {
+    $('modal-title').textContent = '切片预览: ' + fileName;
+    $('modal-chunk-list').innerHTML = '<div style="text-align:center; padding:20px;">加载中...</div>';
+    $('modal-chunks').classList.add('active');
+    
+    try {
+      const r = await fetch(`${API}/api/kb/chunks`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: fileName })
+      });
+      const d = await r.json();
+      if (!d.ok || !d.chunks.length) {
+        $('modal-chunk-list').innerHTML = '<div style="text-align:center; padding:20px;">无切片数据</div>';
+        return;
+      }
+      
+      $('modal-chunk-list').innerHTML = d.chunks.map((text, i) => `
+        <div class="chunk-item">
+          <span class="chunk-no">切片 #${i + 1}</span>
+          <div class="chunk-text">${text}</div>
+        </div>
+      `).join('');
+    } catch (e) {
+      $('modal-chunk-list').innerHTML = '<div style="text-align:center; color:red; padding:20px;">加载失败</div>';
+    }
+  };
+
+  window.deleteFile = async function(fileName) {
+    if (!confirm(`确定要从向量数据库中彻底删除 "${fileName}" 及其所有切片吗？`)) return;
+    try {
+      const r = await fetch(API + '/api/kb/delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: fileName })
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.message);
+      loadHistory();
+    } catch (e) {
+      alert('删除失败: ' + e.message);
+    }
+  };
+
+  // ==========================================
+  // 知识库问答 (支持多会话)
+  // ==========================================
+  const chatInput = $('chat-input');
+  const chatMsgs = $('chat-messages');
+  
+  $('btn-new-chat').addEventListener('click', () => createNewSession(true));
+
+  chatInput.addEventListener('input', function() {
+    this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+  });
+  chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } });
+  $('btn-chat-send').addEventListener('click', sendChat);
+
+  function appendChatBubble(role, html) {
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    const avatar = role === 'user' ? '你' : 'AI';
+    div.innerHTML = `<div class="avatar ${role}">${avatar}</div><div class="bubble">${html}</div>`;
+    chatMsgs.appendChild(div);
+    $('chat-scroll').scrollTop = $('chat-scroll').scrollHeight;
+    return div.querySelector('.bubble');
+  }
+
+  async function sendChat() {
+    if (state.isChatting) return;
+    const q = chatInput.value.trim();
+    if (!q) return;
+    if (!state.selectedModel) return alert('请先在配置中心选择大模型');
+    if (!state.currentSessionId) return alert('请先新建会话');
+
+    const session = state.sessions.find(s => s.id === state.currentSessionId);
+    if (!session) return;
+
+    chatInput.value = ''; chatInput.style.height = 'auto';
+    appendChatBubble('user', q);
+    session.messages.push({ role: 'user', content: q });
+
+    // 如果是新对话，用第一条消息更新标题
+    if (session.title === '新对话') {
+      session.title = q.length > 15 ? q.slice(0, 15) + '...' : q;
+      $('current-session-title').textContent = session.title;
+      renderSessionList();
+    }
+
+    const aiBubble = appendChatBubble('assistant', '<div class="thinking-text">🔍 正在检索知识库...</div>');
+    state.isChatting = true;
+    
+    let targetText = "";
+    let displayedText = "";
+    let isTyping = false;
+    let typingTimer = null;
+
+    const startTyping = () => {
+      if (isTyping) return;
+      isTyping = true;
+      const typeStep = () => {
+        if (displayedText.length < targetText.length) {
+          const step = Math.min(3, targetText.length - displayedText.length);
+          displayedText = targetText.slice(0, displayedText.length + step);
+          aiBubble.innerHTML = displayedText.replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+          $('chat-scroll').scrollTop = $('chat-scroll').scrollHeight;
+          typingTimer = setTimeout(typeStep, 15);
+        } else {
+          isTyping = false;
+        }
+      };
+      typeStep();
+    };
+
+    try {
+      // 携带当前会话最近 4 条历史
+      const recentHistory = session.history.slice(-4);
+      const r = await fetch(API + '/api/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, history: recentHistory })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      let isFirstToken = true;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+        let sep;
+        while ((sep = buf.indexOf('\n\n')) !== -1) {
+          const block = buf.slice(0, sep); buf = buf.slice(sep + 2);
+          if (!block.trim()) continue;
+          let evt = 'message'; const dataLines = [];
+          for (const line of block.split('\n')) {
+            if (line.startsWith('event:')) evt = line.slice(6).trim();
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+          }
+          if (!dataLines.length) continue;
+          let payload; try { payload = JSON.parse(dataLines.join('\n')); } catch (_) { continue; }
+          
+          if (evt === 'sources') {
+            aiBubble.innerHTML = '<div class="thinking-text">🤔 正在思考并生成回答...</div>';
+          } else if (evt === 'token') {
+            if (isFirstToken) {
+              aiBubble.innerHTML = '';
+              isFirstToken = false;
+            }
+            targetText += (payload.token || '');
+            startTyping();
+          } else if (evt === 'done') {
+            if (typingTimer) clearTimeout(typingTimer);
+            aiBubble.innerHTML = targetText.replace(/\n/g, '<br>');
+          }
+        }
+      }
+      
+      if (typingTimer) clearTimeout(typingTimer);
+      if (targetText.trim() === '') {
+        aiBubble.innerHTML = '<span style="color:var(--text-tertiary);">（未接收到内容）</span>';
+      } else {
+        aiBubble.innerHTML = targetText.replace(/\n/g, '<br>');
+        
+        // 保存回复到当前会话
+        session.messages.push({ role: 'assistant', content: targetText });
+        session.history.push({ role: 'user', content: q });
+        session.history.push({ role: 'assistant', content: targetText });
+        
+        // 限制单会话上下文记忆最多 10 条
+        if (session.history.length > 10) {
+            session.history = session.history.slice(session.history.length - 10);
+        }
+        saveSessions();
+      }
+
+    } catch (e) {
+      aiBubble.innerHTML = `<span style="color:var(--danger);">❌ 请求失败: ${e.message}</span>`;
+    } finally { 
+      state.isChatting = false; 
+      if (typingTimer) clearTimeout(typingTimer);
+    }
+  }
+
+  // 页面初始化
+  loadSessions(); // 加载本地多会话数据
+  connectOpenCode();
+  checkVdbStatus();
+})();
+</script>
+</body>
+</html>
